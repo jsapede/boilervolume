@@ -1,3 +1,13 @@
+precision : 
+- extraction eau chaude par le haut
+- appoint eau froide par le bas
+- 3 sondes dallas a 25%, 50% et 75% de hauteur
+- la temperature a 100% de hauteur est considérée constante a 50°C
+- la température 0% de hauteur est considérée constante a 20°C
+- on calcule d'abord le volume d'eau exploitable => tout le volume dont la T° est > 38°C
+- on calcule ensuite le volume réel dilué utilisable à 38°C, en considérant une dilution à l'eau froide a 20°C
+
+
 ```
 ####################
 ## Config existante
