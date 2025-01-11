@@ -16,9 +16,12 @@ Stratégie de calcul :
 
 Sondes : 
 Les sondes sont collées à la surface de la cuve, et leur mesure est faussée. On rajoute une calibration linéeaire en 2 points : 
--  la temperature au niveau zero, stabilisée, quand le chauffe eau est a moitié chaud est égale à la température mesurée au réseau (prélèvement d'eau froide au robinet)
--  La température au niveau 100 est la tempréture de soutirage deau chaude au robinet.
-suffit de prélever dans un thermos et y tremper la sonde dallas
+-  la temperature au niveau zero, stabilisée, quand le chauffe eau est a moitié chaud est égale à la température mesurée au réseau (prélèvement d'eau froide au robinet) => 14.9°C lu par la sonde en paroi et 10.9°c lu par la sonde dans le prélevement d'eau froide
+-  La température au niveau 100 est la tempréture de soutirage deau chaude au robinet => 46.5°C lus par la sonde en paroi et 54.5°c lu par la sonde dans un prelevement d'eau chaude
+
+il suffit de prélever dans un thermos et y tremper la sonde dallas
+
+NB : les addressages des sodnes dallas "address: 0xbd3335d446b8a228" sont propres à chaque sonde, il faut checker dans les logs de l'esp pour avoir la bonne valeur
 
 ```
 
@@ -61,7 +64,7 @@ api:
 
 # Logger Configuration
 logger:
-  level: INFO
+  level: DEBUG
 
 # OTA (Over-the-Air) updates
 ota:
