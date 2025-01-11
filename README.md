@@ -1,29 +1,33 @@
 precision : 
 - extraction eau chaude par le haut
 - appoint eau froide par le bas
-- 3 sondes dallas a 25%, 50% et 75% de hauteur
-- la temperature a 100% de hauteur est considérée constante a 50°C
-- la température 0% de hauteur est considérée constante a 20°C
-- on calcule d'abord le volume d'eau exploitable => tout le volume dont la T° est > 38°C
-- on calcule ensuite le volume réel dilué utilisable à 38°C, en considérant une dilution à l'eau froide a 20°C
+- 5 sondes dallas a 0% 25%, 50% 75% et 100% de hauteur
+- stratification des tempétaures + chauffage en partie basse du chauffe eau => en phase de chauffe si le bas se rechauffe plus vite que le haut il n'est pourtant pas explitable => ajout de filtres sur les vaneurs de temperatures aux niveaux superieurs poru aviter de comptabiliser ces volumes lors des phases de chauffe.
+- L'appoint réseau est considéré a 15°C sauf si la mesure au niveau zero donne une valeur inférieure
+- on calcule d'abord le volume d'eau utile c'edt à dire tout le volume dont la T° est >= 40°C
+- on calcule ensuite le volume exploitable, c'est à dire le volume équivalent dilué utilisable à 40°C, en considérant une dilution à l'eau du reseau
 
+Stratégie de calcul :
+-  on commence par le point le plus haut et on descend : l'eau chaude est soutirée en hauteur et l'appoint froid se fait en bas
+-  pour chauqe section de volume :
+  - si la temperature du niveau le plus haut est < 40°C alors le volume n'est pas utile, ni exploitable
+  - si la temperature du niveau le plus haut ET la temperature du niveau le plus bas sont >= 40°C alors tout le volume est utile et le volume exploitable est calulé à partie de la valeur moyenne de temperature sur la tranche
+  - si la temperature du niveau le plus haut est >=40°C ET la temperature du niveau le plus bas <40°C alors on in interpole les temperatures et on calcule la proportion de la tranche de volume utile et exploitable 
 
 ```
-####################
-## Config existante
-####################
-
 
 substitutions:
-  device_name: "Temperature Chauffe Eau"
+  device_name: "Chauffe Eau"
   dallas_hub_1_pin: GPIO13
   dallas_hub_2_pin: GPIO12
   dallas_hub_3_pin: GPIO14
+  dallas_hub_4_pin: GPIO15
+  dallas_hub_5_pin: GPIO4
 
 esphome:
-  name: "sonde-chauffe-eau"
+  name: "chauffe-eau"
   min_version: 2024.11.2
-  build_path: build/sonde-chauffe-eau
+  build_path: build/chauffe-eau
 
 esp32:
   board: esp32dev
@@ -85,6 +89,15 @@ one_wire:
   - platform: gpio  
     id: dallas_hub_3
     pin: ${dallas_hub_3_pin}
+  - platform: gpio  
+    id: dallas_hub_4
+    pin: ${dallas_hub_4_pin}
+  - platform: gpio  
+    id: dallas_hub_5
+    pin: ${dallas_hub_5_pin}
+
+
+
 
 # Dallas Temperature Sensors
 sensor:
@@ -92,141 +105,298 @@ sensor:
     one_wire_id: dallas_hub_1
     address: 0xbd3335d446b8a228
     id: sensor_1
-    name: "Chauffe-Eau Temperature 75%"
-    update_interval: 60s
+    name: "Temperature Niveau 75%"
+    update_interval: 10s
     resolution: 12
+    device_class: "temperature"
+    state_class: "measurement"
+    unit_of_measurement: "°C"
+    icon: mdi:thermometer
+    filters:
+      - calibrate_linear:
+         method: least_squares
+         datapoints:
+          # Map 0.0 (from sensor) to 1.0 (true value)
+          - 14.9 -> 10.9
+          - 46.5 -> 54.5
+
   - platform: dallas_temp
     one_wire_id: dallas_hub_2
     address: 0xcf79ddd446e17728
     id: sensor_2
-    name: "Chauffe-Eau Temperature 50%"
-    update_interval: 60s
+    name: "Temperature Niveau 50%"
+    update_interval: 10s
     resolution: 12
+    device_class: "temperature"
+    state_class: "measurement"
+    unit_of_measurement: "°C"
+    icon: mdi:thermometer
+    filters:
+      - calibrate_linear:
+         method: least_squares
+         datapoints:
+          # Map 0.0 (from sensor) to 1.0 (true value)
+          - 14.9 -> 10.9
+          - 46.5 -> 54.5
+
+
   - platform: dallas_temp
     one_wire_id: dallas_hub_3
     address: 0xef1ff7d446a22628
     id: sensor_3
-    name: "Chauffe-Eau Temperature 25%"
-    update_interval: 60s
+    name: "Temperature Niveau 25%"
+    update_interval: 10s
     resolution: 12
+    device_class: "temperature"
+    state_class: "measurement"
+    unit_of_measurement: "°C"
+    icon: mdi:thermometer
+    filters:
+      - calibrate_linear:
+         method: least_squares
+         datapoints:
+          # Map 0.0 (from sensor) to 1.0 (true value)
+          - 14.9 -> 10.9
+          - 46.5 -> 54.5
+
+
+  - platform: dallas_temp
+    one_wire_id: dallas_hub_4
+    address: 0xe13ce10457ac2128
+    id: sensor_4
+    name: "Temperature Niveau 100%"
+    update_interval: 10s
+    resolution: 12
+    device_class: "temperature"
+    state_class: "measurement"
+    unit_of_measurement: "°C"
+    icon: mdi:thermometer
+    filters:
+      - calibrate_linear:
+         method: least_squares
+         datapoints:
+          # Map 0.0 (from sensor) to 1.0 (true value)
+          - 14.9 -> 10.9
+          - 46.5 -> 54.5
+      - clamp:
+          min_value: 5
+          max_value: 65
+          ignore_out_of_range: true
+      - sliding_window_moving_average:
+          window_size: 5
+          send_every: 6
+
+  - platform: dallas_temp
+    one_wire_id: dallas_hub_5
+    address: 0x12839fb30a646128
+    id: sensor_5
+    name: "Temperature Niveau 0%"
+    update_interval: 10s
+    resolution: 12
+    device_class: "temperature"
+    state_class: "measurement"
+    unit_of_measurement: "°C"
+    icon: mdi:thermometer
+    filters:
+      - calibrate_linear:
+         method: least_squares
+         datapoints:
+          # Map 0.0 (from sensor) to 1.0 (true value)
+          - 14.9 -> 10.9
+          - 46.5 -> 54.5
 
 
   - platform: template
-    name: "Volume exploitable (38°C)"
+    name: "Volume utile (> 40°C)"
     unit_of_measurement: "L"
     icon: mdi:gauge
+    device_class: "volume"
+    state_class: "measurement"
+    update_interval: 10s
+    accuracy_decimals: 1
     lambda: |-
-      float sensor1_temp = id(sensor_1).state;
-      float sensor2_temp = id(sensor_2).state;
-      float sensor3_temp = id(sensor_3).state;
+      float temp_ref = 40.0;
+      float vol_ref = 25.0;
+      float temp_reseau = 15.0;
+      float temp_reseau_ref = 15.0;
+      float vol_total = 300;
+      float temp_75 = id(sensor_1).state;
+      float temp_50 = id(sensor_2).state;
+      float temp_25 = id(sensor_3).state;
+      float temp_100 = id(sensor_4).state;
+      float temp_0 = id(sensor_5).state;
+      float tangente_100_75 = (temp_75 - temp_100) / vol_ref;
+      float tangente_75_50 = (temp_50 - temp_75) / vol_ref;
+      float tangente_50_25 = (temp_25 - temp_50) / vol_ref;
+      float tangente_25_0 = (temp_0 - temp_25) / vol_ref;
+      float temp_moy_100_75 = (temp_100 + temp_75) / 2.0;
+      float temp_moy_75_50 = (temp_75 + temp_50) / 2.0;
+      float temp_moy_50_25 = (temp_50 + temp_25) / 2.0;
+      float temp_moy_25_0 = (temp_25 + temp_0) / 2.0;
+      float vol_utile_100_75 = 0.0;
+      float vol_utile_75_50 = 0.0;
+      float vol_utile_50_25 = 0.0;
+      float vol_utile_25_0 = 0.0;
+      float vol_utile = 0.0;
 
-      const float full_volume = 300.0;  // Total volume of the boiler (in liters)
-      const float temp_100_percent = 50.0;  // Temperature at 100% height
-      const float temp_0_percent = 20.0; // temperature at 0% height
-      const float temp_ref = 38.0;  // Temperature reference for useful volume calculation
-
-      float useful_volume = 0.0;
-      float tangent = 1.0;
-      
-      if (sensor1_temp >= temp_ref) {
-        if (sensor2_temp >= temp_ref) {
-          if (sensor3_temp >= temp_ref) {
-            // Linear interpolation between 25% and 0% height
-            float tangent = (sensor3_temp - temp_0_percent) / 25.0;
-            float interpolated_height = 25 - (sensor3_temp - temp_ref) / tangent;
-            useful_volume = full_volume * ((100 - interpolated_height) * 0.01);
-            return useful_volume;  // Return after calculation
-          } else {
-            // Linear interpolation between 50% and 25% height
-            float tangent = (sensor2_temp - sensor3_temp) / 25.0;
-            float interpolated_height = 50 - (sensor2_temp - temp_ref) / tangent;
-            useful_volume = full_volume * ((100 - interpolated_height) * 0.01);
-            return useful_volume;  // Return after calculation
-          }
-        } else {
-          // Linear interpolation between 75% and 50% height
-          float tangent = (sensor1_temp - sensor2_temp) / 25.0;
-          float interpolated_height = 75 - (sensor1_temp - temp_ref) / tangent ;
-          useful_volume = full_volume * ((100 - interpolated_height) * 0.01);
-          return useful_volume;  // Return after calculation
-        }
+      if (temp_0 < temp_reseau_ref) {
+        temp_reseau = temp_0;
       } else {
-        // Linear interpolation between 100% and 75% height
-        float tangent = (temp_100_percent - sensor1_temp) / 25.0;
-        float interpolated_height = 100 - (temp_100_percent - temp_ref) / tangent ;
-        useful_volume = full_volume * ((100 - interpolated_height) * 0.01);
-        return useful_volume;  // Return after calculation
+        temp_reseau = temp_reseau_ref;
       }
 
-      // If the temperature is too low, return useful_volume (it will be 0 in this case)
-      return useful_volume;
+      if (temp_100 >= temp_ref) {
+        if (temp_75 >= temp_ref) {
+          vol_utile_100_75 = vol_ref;
+        } else {
+          vol_utile_100_75 = (temp_ref-temp_100)/tangente_100_75;
+          }
+      } else {
+        vol_utile_100_75 = 0.0;
+        }
 
+      if (temp_100 >=temp_ref) {
+        if (temp_75 >= temp_ref) {
+          if (temp_50 >= temp_ref) {
+            vol_utile_75_50 = vol_ref;
+          } else {
+            vol_utile_75_50 = (temp_ref-temp_75)/tangente_75_50;
+          }
+        } else {
+          vol_utile_75_50 = 0.0;
+        }
+      } else {
+          vol_utile_75_50 = 0.0;
+      }  
+
+      if (temp_75 >= temp_ref and temp_100 >=temp_ref) {
+        if (temp_50 >= temp_ref) {
+          if (temp_25 >= temp_ref) {
+            vol_utile_50_25 = vol_ref;
+          } else {
+            vol_utile_50_25 = (temp_ref-temp_50)/tangente_50_25;
+          }
+        } else {
+          vol_utile_50_25 = 0.0;
+        }
+      } else {
+          vol_utile_50_25 = 0.0;
+      }      
+
+      if (temp_50 >= temp_ref and temp_75 >= temp_ref and temp_100 >=temp_ref) {
+        if (temp_25 >= temp_ref) {
+          if (temp_0 >= temp_ref) {
+            vol_utile_25_0 = vol_ref;
+          } else {
+            vol_utile_25_0 = (temp_ref-temp_25)/tangente_25_0;
+          }
+        } else {
+          vol_utile_25_0 = 0.0;
+        }
+      } else {
+          vol_utile_25_0 = 0.0;
+      }
+
+      vol_utile = (vol_utile_100_75 + vol_utile_75_50 + vol_utile_50_25 + vol_utile_25_0)*vol_total/100.0;
+      return vol_utile;
 
 
 
 
   - platform: template
-    name: "Volume équivalent 38°C"
+    name: "Volume exploitable (eq. 40°C)"
     unit_of_measurement: "L"
     icon: mdi:gauge
+    device_class: "volume"
+    state_class: "measurement"
+    update_interval: 10s
+    accuracy_decimals: 1
     lambda: |-
-      float sensor1_temp = id(sensor_1).state;
-      float sensor2_temp = id(sensor_2).state;
-      float sensor3_temp = id(sensor_3).state;
+      float temp_ref = 40.0;
+      float vol_ref = 25.0;
+      float temp_reseau = 15.0;
+      float temp_reseau_ref = 15.0;
+      float vol_total = 300;
+      float temp_75 = id(sensor_1).state;
+      float temp_50 = id(sensor_2).state;
+      float temp_25 = id(sensor_3).state;
+      float temp_100 = id(sensor_4).state;
+      float temp_0 = id(sensor_5).state;
+      float tangente_100_75 = (temp_75 - temp_100) / vol_ref;
+      float tangente_75_50 = (temp_50 - temp_75) / vol_ref;
+      float tangente_50_25 = (temp_25 - temp_50) / vol_ref;
+      float tangente_25_0 = (temp_0 - temp_25) / vol_ref;
+      float temp_moy_100_75 = (temp_100 + temp_75) / 2.0;
+      float temp_moy_75_50 = (temp_75 + temp_50) / 2.0;
+      float temp_moy_50_25 = (temp_50 + temp_25) / 2.0;
+      float temp_moy_25_0 = (temp_25 + temp_0) / 2.0;
+      float vol_expl_100_75 = 0.0;
+      float vol_expl_75_50 = 0.0;
+      float vol_expl_50_25 = 0.0;
+      float vol_expl_25_0 = 0.0;
+      float vol_expl = 0.0;
 
-      const float full_volume = 300.0;  // Total volume of the boiler (in liters)
-      const float temp_ref = 38.0;  // Temperature reference for useful volume calculation
-      const float temp_100_percent = 50.0;  // Temperature at 100% height
-      const float temp_0_percent = 20.0; // temperature at 0% height
-
-      float useful_volume = 0.0;
-      float temp_moy = temp_ref;  // Default to temp_ref for initial calculation
-
-      // Calculate useful volume based on sensor readings
-      if (sensor1_temp >= temp_ref) {
-        // Section from 75% to 100% volume
-        float temp_moy100_75 = (temp_100_percent + sensor1_temp) / 2.0;
-        useful_volume += full_volume * 0.25 * (1 + ((temp_moy100_75 - temp_ref) / (temp_ref - temp_0_percent)));
-
-        if (sensor2_temp >= temp_ref) {
-          // Section from 50% to 75% volume
-          float temp_moy75_50 = (sensor1_temp + sensor2_temp) / 2.0;
-          useful_volume += full_volume * 0.25 * (1 + ((temp_moy75_50 - temp_ref) / (temp_ref - temp_0_percent)));
-
-          if (sensor3_temp >= temp_ref) {
-            // Section from 25% to 50% volume
-            float temp_moy50_25 = (sensor2_temp + sensor3_temp) / 2.0;
-
-            // section from 0% to 25%
-            float tangent25_0 = (sensor3_temp - temp_0_percent) / 25.0;
-            float interpolated_height25_0 = 25 - (sensor3_temp - temp_ref) / tangent25_0;
-            float temp_moy25_0_lin = (sensor3_temp + temp_0_percent) / 2.0;
-            useful_volume +=  full_volume * 0.25 * (1 + ((temp_moy50_25 - temp_ref) / (temp_ref - temp_0_percent)));
-            useful_volume +=  full_volume * 0.25 * (1 + ((temp_moy25_0_lin - temp_ref) / (temp_ref - temp_0_percent))) * ((25 - interpolated_height25_0) * 0.01);
-          } else {
-            // Section from 50% to 25% volume with interpolation
-            float tangent50_25 = (sensor2_temp - sensor3_temp) / 25.0;
-            float interpolated_height50_25 = 25 - (sensor2_temp - temp_ref) / tangent50_25;
-            float temp_moy50_25_lin = (sensor2_temp + temp_ref) / 2.0;
-            useful_volume += full_volume * 0.25 * (1 + ((temp_moy50_25_lin - temp_ref) / (temp_ref - temp_0_percent))) * ((25 - interpolated_height50_25) * 0.01);
-          }
-        } else {
-          // Section from 75% to 50% volume with interpolation
-          float tangent75_50 = (sensor1_temp - sensor2_temp) / 25.0;
-          float interpolated_height75_50 = 25 - (sensor1_temp - temp_ref) / tangent75_50;
-          float temp_moy75_50 = (sensor1_temp + temp_ref) / 2.0;
-          useful_volume += full_volume * 0.25 * (1 + ((temp_moy75_50 - temp_ref) / (temp_ref - temp_0_percent))) * ((25 - interpolated_height75_50) * 0.01);
-        }
+      if (temp_0 < temp_reseau_ref) {
+        temp_reseau = temp_0;
       } else {
-        // Section from 100% to 75% volume
-        float tangent100_75 = (temp_100_percent - sensor1_temp) / 25.0;
-        float interpolated_height100_75 = 25 - (temp_100_percent - temp_ref) / tangent100_75;
-        float temp_moy100_75_lin = (temp_100_percent + temp_ref) / 2.0;
-        useful_volume += full_volume * 0.25 * (1 + ((temp_moy100_75_lin - temp_ref) / (temp_ref - temp_0_percent))) * ((25 - interpolated_height100_75) * 0.01);
+        temp_reseau = temp_reseau_ref;
       }
 
-      return useful_volume;  // Return the calculated useful volume
+      if (temp_100 >= temp_ref) {
+        if (temp_75 >= temp_ref) {
+          vol_expl_100_75 = vol_ref * (1 + (temp_moy_100_75 - temp_ref)/(temp_ref - temp_reseau));
+        } else {
+          vol_expl_100_75 = ((temp_ref-temp_100)/tangente_100_75) * (1 + (temp_moy_100_75 - temp_ref)/(temp_ref - temp_reseau));
+          }
+      } else {
+        vol_expl_100_75 = 0.0;
+        }
 
+      if (temp_100 >=temp_ref) {
+        if (temp_75 >= temp_ref) {
+          if (temp_50 >= temp_ref) {
+            vol_expl_75_50 = vol_ref * (1 + (temp_moy_75_50 - temp_ref)/(temp_ref - temp_reseau));
+          } else {
+            vol_expl_75_50 = ((temp_ref-temp_75)/tangente_75_50) * (1 + (temp_moy_75_50 - temp_ref)/(temp_ref - temp_reseau));
+          }
+        } else {
+          vol_expl_75_50 = 0.0;
+        }
+      } else {
+          vol_expl_75_50 = 0.0;
+      }
+
+      if (temp_75 >= temp_ref and temp_100 >=temp_ref) {
+        if (temp_50 >= temp_ref) {
+          if (temp_25 >= temp_ref) {
+            vol_expl_50_25 = vol_ref * (1 + (temp_moy_50_25 - temp_ref)/(temp_ref - temp_reseau));
+          } else {
+            vol_expl_50_25 = ((temp_ref-temp_50)/tangente_50_25) * (1 + (temp_moy_50_25 - temp_ref)/(temp_ref - temp_reseau));
+          }
+        } else {
+          vol_expl_50_25 = 0.0;
+        }
+      } else {
+          vol_expl_50_25 = 0.0;
+      }
+
+
+      if (temp_50 >= temp_ref and temp_75 >= temp_ref and temp_100 >=temp_ref) {
+        if (temp_25 >= temp_ref) {
+          if (temp_0 >= temp_ref) {
+            vol_expl_25_0 = vol_ref * (1 + (temp_moy_25_0 - temp_ref)/(temp_ref - temp_reseau));
+          } else {
+            vol_expl_25_0 = ((temp_ref-temp_25)/tangente_25_0) * (1 + (temp_moy_25_0 - temp_ref)/(temp_ref - temp_reseau));
+          }
+        } else {
+          vol_expl_25_0 = 0.0;
+        }
+      } else {
+          vol_expl_25_0 = 0.0;
+      }
+
+      vol_expl = (vol_expl_100_75 + vol_expl_75_50 + vol_expl_50_25 + vol_expl_25_0)*vol_total/100.0;
+      return vol_expl;
 
 
 
@@ -240,6 +410,7 @@ text_sensor:
       name: "${device_name} Wifi SSID"
     bssid:
       name: "${device_name} Wifi BSSID"
+
 
 
 
