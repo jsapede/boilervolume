@@ -2,14 +2,14 @@ precision :
 - extraction eau chaude par le haut
 - appoint eau froide par le bas
 - 5 sondes dallas a 0% 25%, 50% 75% et 100% de hauteur
-- stratification des tempétaures + chauffage en partie basse du chauffe eau => en phase de chauffe si le bas se rechauffe plus vite que le haut il n'est pourtant pas explitable => ajout de filtres sur les vaneurs de temperatures aux niveaux superieurs poru aviter de comptabiliser ces volumes lors des phases de chauffe.
+- stratification des tempétaures + chauffage en partie basse du chauffe eau => en phase de chauffe si le bas se rechauffe plus vite que le haut il n'est pourtant pas exploitable => ajout de filtres sur les valeurs de temperatures aux niveaux superieurs pour éviter de comptabiliser ces volumes lors des phases de chauffe.
 - L'appoint réseau est considéré a 15°C sauf si la mesure au niveau zero donne une valeur inférieure
 - on calcule d'abord le volume d'eau utile c'edt à dire tout le volume dont la T° est >= 40°C
-- on calcule ensuite le volume exploitable, c'est à dire le volume équivalent dilué utilisable à 40°C, en considérant une dilution à l'eau du reseau
+- on calcule ensuite le volume exploitable, c'est à dire le volume équivalent dilué utilisable à 40°C (mitigeur), en considérant une dilution à l'eau du reseau
 
 Stratégie de calcul :
 -  on commence par le point le plus haut et on descend : l'eau chaude est soutirée en hauteur et l'appoint froid se fait en bas
--  pour chauqe section de volume :
+-  pour chaque section de volume :
   - si la temperature du niveau le plus haut est < 40°C alors le volume n'est pas utile, ni exploitable
   - si la temperature du niveau le plus haut ET la temperature du niveau le plus bas sont >= 40°C alors tout le volume est utile et le volume exploitable est calulé à partie de la valeur moyenne de temperature sur la tranche
   - si la temperature du niveau le plus haut est >=40°C ET la temperature du niveau le plus bas <40°C alors on in interpole les temperatures et on calcule la proportion de la tranche de volume utile et exploitable
@@ -17,7 +17,8 @@ Stratégie de calcul :
 Sondes : 
 Les sondes sont collées à la surface de la cuve, et leur mesure est faussée. On rajoute une calibration linéeaire en 2 points : 
 -  la temperature au niveau zero, stabilisée, quand le chauffe eau est a moitié chaud est égale à la température mesurée au réseau (prélèvement d'eau froide au robinet)
--  La température au niveau 100 est la sempréture de soutirage deau chaude au robinet.
+-  La température au niveau 100 est la tempréture de soutirage deau chaude au robinet.
+suffit de prélever dans un thermos et y tremper la sonde dallas
 
 ```
 
