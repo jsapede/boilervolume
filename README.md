@@ -12,7 +12,12 @@ Stratégie de calcul :
 -  pour chauqe section de volume :
   - si la temperature du niveau le plus haut est < 40°C alors le volume n'est pas utile, ni exploitable
   - si la temperature du niveau le plus haut ET la temperature du niveau le plus bas sont >= 40°C alors tout le volume est utile et le volume exploitable est calulé à partie de la valeur moyenne de temperature sur la tranche
-  - si la temperature du niveau le plus haut est >=40°C ET la temperature du niveau le plus bas <40°C alors on in interpole les temperatures et on calcule la proportion de la tranche de volume utile et exploitable 
+  - si la temperature du niveau le plus haut est >=40°C ET la temperature du niveau le plus bas <40°C alors on in interpole les temperatures et on calcule la proportion de la tranche de volume utile et exploitable
+
+Sondes : 
+Les sondes sont collées à la surface de la cuve, et leur mesure est faussée. On rajoute une calibration linéeaire en 2 points : 
+-  la temperature au niveau zero, stabilisée, quand le chauffe eau est a moitié chaud est égale à la température mesurée au réseau (prélèvement d'eau froide au robinet)
+-  La température au niveau 100 est la sempréture de soutirage deau chaude au robinet.
 
 ```
 
