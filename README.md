@@ -23,6 +23,9 @@ il suffit de prélever dans un thermos et y tremper la sonde dallas
 
 NB : les addressages des sodnes dallas "address: 0xbd3335d446b8a228" sont propres à chaque sonde, il faut checker dans les logs de l'esp pour avoir la bonne valeur
 
+![image](https://github.com/user-attachments/assets/3313c812-fc6f-4803-bf68-7dc6d9b2bd3a)
+
+
 ```
 
 substitutions:
