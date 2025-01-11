@@ -217,7 +217,6 @@ sensor:
     unit_of_measurement: "L"
     icon: mdi:gauge
     device_class: "volume"
-    state_class: "measurement"
     update_interval: 10s
     accuracy_decimals: 1
     lambda: |-
@@ -314,7 +313,6 @@ sensor:
     unit_of_measurement: "L"
     icon: mdi:gauge
     device_class: "volume"
-    state_class: "measurement"
     update_interval: 10s
     accuracy_decimals: 1
     lambda: |-
