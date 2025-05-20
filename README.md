@@ -1,11 +1,10 @@
-Calcul de la capacité d'eau chaude restante dans un chauffe-eau à partir de sondes positionnées a différentes hauteur sur la paroi de la cuve.
+Calcul sous ESPHOME de la capacité d'eau chaude restante dans un chauffe-eau à partir de sondes Dallas positionnées a différentes hauteur sur la paroi de la cuve.
 
 precision : 
 - extraction eau chaude par le haut
 - appoint eau froide par le bas
 - 5 sondes dallas a 0% 25%, 50% 75% et 100% de hauteur
-- stratification des tempétaures + chauffage en partie basse du chauffe eau => en phase de chauffe si le bas se rechauffe plus vite que le haut il n'est pourtant pas exploitable => ajout de filtres sur les valeurs de temperatures aux niveaux superieurs pour éviter de comptabiliser ces volumes lors des phases de chauffe.
-- L'appoint réseau est considéré a 15°C sauf si la mesure au niveau zero donne une valeur inférieure
+- stratification des températures + chauffage en partie basse du chauffe eau => en phase de chauffe si le bas se rechauffe plus vite que le haut il n'est pourtant pas exploitable => ajout de filtres sur les valeurs de temperatures aux niveaux superieurs pour éviter de comptabiliser ces volumes lors des phases de chauffe.
 - on calcule d'abord le volume d'eau utile c'edt à dire tout le volume dont la T° est >= 40°C
 - on calcule ensuite le volume exploitable, c'est à dire le volume équivalent dilué utilisable à 40°C (mitigeur), en considérant une dilution à l'eau du reseau
 
@@ -20,6 +19,18 @@ Sondes :
 Les sondes sont collées à la surface de la cuve, et leur mesure est faussée. On rajoute une calibration linéeaire en 2 points : 
 -  la temperature au niveau zero, stabilisée, quand le chauffe eau est a moitié chaud est égale à la température mesurée au réseau (prélèvement d'eau froide au robinet) => 14.9°C lu par la sonde en paroi et 10.9°c lu par la sonde dans le prélevement d'eau froide
 -  La température au niveau 100 est la tempréture de soutirage deau chaude au robinet => 46.5°C lus par la sonde en paroi et 54.5°c lu par la sonde dans un prelevement d'eau chaude
+
+A partir de ces deux valeurs on construit une régréssion lineaire qui permet de corriger la temperature sur toute la plage de mesure. Cette correction est directement intégrable aux capteurs sous esphome avec la fonction filters, à ajuster selon vos valeurs et le nombre de points de calibration que vous faites. : 
+
+```
+    filters:
+      - calibrate_linear:
+         method: least_squares
+         datapoints:
+          # Map 0.0 (from sensor) to 1.0 (true value)
+          - 14.9 -> 10.9
+          - 46.5 -> 54.5
+```
 
 il suffit de prélever dans un thermos et y tremper la sonde dallas
 
