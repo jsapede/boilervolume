@@ -38,9 +38,20 @@ NB : les addressages des sodnes dallas "address: 0xbd3335d446b8a228" sont propre
 
 ![image](https://github.com/user-attachments/assets/3313c812-fc6f-4803-bf68-7dc6d9b2bd3a)
 
+Les parametres propre à chaque installation sont définis en entrée de fonctio nde calcul : 
 
 ```
+      float temp_ref = 40.0; # température de référence pour les calculs d'eau chaude exploitable (valeur sortie mitigeur)
+      float vol_ref = 25.0; # tranche de volume considérée entre deux sondes
+      float temp_reseau = 15.0; # température de l'eau du réseau
+      float temp_reseau_ref = 15.0; # température par défaut de l'eau du réseau
+      float vol_total = 300; # volume total utile de la cuve du chauffe eau
+```
 
+Voici le code ESPHOME : 
+
+
+```
 substitutions:
   device_name: "Chauffe Eau"
   dallas_hub_1_pin: GPIO13
@@ -50,7 +61,7 @@ substitutions:
   dallas_hub_5_pin: GPIO4
 
 esphome:
-  name: "chauffe-eau"
+  name: "sonde-chauffe-eau"
   min_version: 2024.11.2
   build_path: build/chauffe-eau
 
@@ -61,8 +72,13 @@ esp32:
 
 # WiFi Configuration
 wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
+  ssid: !secret iot_ssid
+  password: !secret iot_password
+  output_power: 20.5dB
+  passive_scan: True
+  fast_connect: True
+  power_save_mode: NONE
+  domain: .lan
 
   ap:
     ssid: "${device_name}"
@@ -131,67 +147,8 @@ sensor:
     address: 0xbd3335d446b8a228
     id: sensor_1
     name: "Temperature Niveau 75%"
-    update_interval: 10s
-    resolution: 12
-    device_class: "temperature"
-    state_class: "measurement"
-    unit_of_measurement: "°C"
-    icon: mdi:thermometer
-    filters:
-      - calibrate_linear:
-         method: least_squares
-         datapoints:
-          # Map 0.0 (from sensor) to 1.0 (true value)
-          - 14.9 -> 10.9
-          - 46.5 -> 54.5
-
-  - platform: dallas_temp
-    one_wire_id: dallas_hub_2
-    address: 0xcf79ddd446e17728
-    id: sensor_2
-    name: "Temperature Niveau 50%"
-    update_interval: 10s
-    resolution: 12
-    device_class: "temperature"
-    state_class: "measurement"
-    unit_of_measurement: "°C"
-    icon: mdi:thermometer
-    filters:
-      - calibrate_linear:
-         method: least_squares
-         datapoints:
-          # Map 0.0 (from sensor) to 1.0 (true value)
-          - 14.9 -> 10.9
-          - 46.5 -> 54.5
-
-
-  - platform: dallas_temp
-    one_wire_id: dallas_hub_3
-    address: 0xef1ff7d446a22628
-    id: sensor_3
-    name: "Temperature Niveau 25%"
-    update_interval: 10s
-    resolution: 12
-    device_class: "temperature"
-    state_class: "measurement"
-    unit_of_measurement: "°C"
-    icon: mdi:thermometer
-    filters:
-      - calibrate_linear:
-         method: least_squares
-         datapoints:
-          # Map 0.0 (from sensor) to 1.0 (true value)
-          - 14.9 -> 10.9
-          - 46.5 -> 54.5
-
-
-  - platform: dallas_temp
-    one_wire_id: dallas_hub_4
-    address: 0xe13ce10457ac2128
-    id: sensor_4
-    name: "Temperature Niveau 100%"
-    update_interval: 10s
-    resolution: 12
+    update_interval: 60s
+    resolution: 11
     device_class: "temperature"
     state_class: "measurement"
     unit_of_measurement: "°C"
@@ -208,16 +165,17 @@ sensor:
           max_value: 65
           ignore_out_of_range: true
       - sliding_window_moving_average:
-          window_size: 5
-          send_every: 6
+          window_size: 10
+          send_every: 2
+      - round: 1
 
   - platform: dallas_temp
-    one_wire_id: dallas_hub_5
-    address: 0x12839fb30a646128
-    id: sensor_5
-    name: "Temperature Niveau 0%"
-    update_interval: 10s
-    resolution: 12
+    one_wire_id: dallas_hub_2
+    address: 0xcf79ddd446e17728
+    id: sensor_2
+    name: "Temperature Niveau 50%"
+    update_interval: 60s
+    resolution: 11
     device_class: "temperature"
     state_class: "measurement"
     unit_of_measurement: "°C"
@@ -229,30 +187,124 @@ sensor:
           # Map 0.0 (from sensor) to 1.0 (true value)
           - 14.9 -> 10.9
           - 46.5 -> 54.5
+      - clamp:
+          min_value: 5
+          max_value: 65
+          ignore_out_of_range: true
+      - sliding_window_moving_average:
+          window_size: 10
+          send_every: 2
+      - round: 1
 
+
+  - platform: dallas_temp
+    one_wire_id: dallas_hub_3
+    address: 0xef1ff7d446a22628
+    id: sensor_3
+    name: "Temperature Niveau 25%"
+    update_interval: 60s
+    resolution: 11
+    device_class: "temperature"
+    state_class: "measurement"
+    unit_of_measurement: "°C"
+    icon: mdi:thermometer
+    filters:
+      - calibrate_linear:
+         method: least_squares
+         datapoints:
+          # Map 0.0 (from sensor) to 1.0 (true value)
+          - 14.9 -> 10.9
+          - 46.5 -> 54.5
+      - clamp:
+          min_value: 5
+          max_value: 65
+          ignore_out_of_range: true
+      - sliding_window_moving_average:
+          window_size: 10
+          send_every: 2
+      - round: 1
+
+
+  - platform: dallas_temp
+    one_wire_id: dallas_hub_4
+    address: 0xe13ce10457ac2128
+    id: sensor_4
+    name: "Temperature Niveau 100%"
+    update_interval: 60s
+    resolution: 11
+    device_class: "temperature"
+    state_class: "measurement"
+    unit_of_measurement: "°C"
+    icon: mdi:thermometer
+    filters:
+      - calibrate_linear:
+         method: least_squares
+         datapoints:
+          # Map 0.0 (from sensor) to 1.0 (true value)
+          - 14.9 -> 10.9
+          - 46.5 -> 54.5
+      - clamp:
+          min_value: 5
+          max_value: 65
+          ignore_out_of_range: true
+      - sliding_window_moving_average:
+          window_size: 10
+          send_every: 2
+      - round: 1
+
+  - platform: dallas_temp
+    one_wire_id: dallas_hub_5
+    address: 0x12839fb30a646128
+    id: sensor_5
+    name: "Temperature Niveau 0%"
+    update_interval: 60s
+    resolution: 11
+    device_class: "temperature"
+    state_class: "measurement"
+    unit_of_measurement: "°C"
+    icon: mdi:thermometer
+    filters:
+      - calibrate_linear:
+         method: least_squares
+         datapoints:
+          # Map 0.0 (from sensor) to 1.0 (true value)
+          - 14.9 -> 10.9
+          - 46.5 -> 54.5
+      - clamp:
+          min_value: 5
+          max_value: 65
+          ignore_out_of_range: true
+      - sliding_window_moving_average:
+          window_size: 10
+          send_every: 2
+      - round: 1
 
   - platform: template
     name: "Volume utile (> 40°C)"
     unit_of_measurement: "L"
     icon: mdi:gauge
-    device_class: "volume"
-    update_interval: 10s
+    device_class: "volume_storage"
+    state_class: "measurement"
+    update_interval: 60s
     accuracy_decimals: 1
     lambda: |-
       float temp_ref = 40.0;
-      float vol_ref = 25.0;
       float temp_reseau = 15.0;
       float temp_reseau_ref = 15.0;
       float vol_total = 300;
+      float vol_ref_100_75 = (30.0/140.0)*100.0;
+      float vol_ref_75_50 = (40.0/140.0)*100.0;
+      float vol_ref_50_25 = (40.0/140.0)*100.0;
+      float vol_ref_25_0 = (30.0/140.0)*100.0;
       float temp_75 = id(sensor_1).state;
       float temp_50 = id(sensor_2).state;
       float temp_25 = id(sensor_3).state;
       float temp_100 = id(sensor_4).state;
       float temp_0 = id(sensor_5).state;
-      float tangente_100_75 = (temp_75 - temp_100) / vol_ref;
-      float tangente_75_50 = (temp_50 - temp_75) / vol_ref;
-      float tangente_50_25 = (temp_25 - temp_50) / vol_ref;
-      float tangente_25_0 = (temp_0 - temp_25) / vol_ref;
+      float tangente_100_75 = (temp_75 - temp_100) / vol_ref_100_75;
+      float tangente_75_50 = (temp_50 - temp_75) / vol_ref_75_50;
+      float tangente_50_25 = (temp_25 - temp_50) / vol_ref_50_25;
+      float tangente_25_0 = (temp_0 - temp_25) / vol_ref_25_0;
       float temp_moy_100_75 = (temp_100 + temp_75) / 2.0;
       float temp_moy_75_50 = (temp_75 + temp_50) / 2.0;
       float temp_moy_50_25 = (temp_50 + temp_25) / 2.0;
@@ -271,7 +323,7 @@ sensor:
 
       if (temp_100 >= temp_ref) {
         if (temp_75 >= temp_ref) {
-          vol_utile_100_75 = vol_ref;
+          vol_utile_100_75 = vol_ref_100_75;
         } else {
           vol_utile_100_75 = (temp_ref-temp_100)/tangente_100_75;
           }
@@ -282,7 +334,7 @@ sensor:
       if (temp_100 >=temp_ref) {
         if (temp_75 >= temp_ref) {
           if (temp_50 >= temp_ref) {
-            vol_utile_75_50 = vol_ref;
+            vol_utile_75_50 = vol_ref_75_50;
           } else {
             vol_utile_75_50 = (temp_ref-temp_75)/tangente_75_50;
           }
@@ -296,7 +348,7 @@ sensor:
       if (temp_75 >= temp_ref and temp_100 >=temp_ref) {
         if (temp_50 >= temp_ref) {
           if (temp_25 >= temp_ref) {
-            vol_utile_50_25 = vol_ref;
+            vol_utile_50_25 = vol_ref_50_25;
           } else {
             vol_utile_50_25 = (temp_ref-temp_50)/tangente_50_25;
           }
@@ -310,7 +362,7 @@ sensor:
       if (temp_50 >= temp_ref and temp_75 >= temp_ref and temp_100 >=temp_ref) {
         if (temp_25 >= temp_ref) {
           if (temp_0 >= temp_ref) {
-            vol_utile_25_0 = vol_ref;
+            vol_utile_25_0 = vol_ref_25_0;
           } else {
             vol_utile_25_0 = (temp_ref-temp_25)/tangente_25_0;
           }
@@ -331,12 +383,16 @@ sensor:
     name: "Volume exploitable (eq. 40°C)"
     unit_of_measurement: "L"
     icon: mdi:gauge
-    device_class: "volume"
-    update_interval: 10s
+    device_class: "volume_storage"
+    state_class: "measurement"
+    update_interval: 60s
     accuracy_decimals: 1
     lambda: |-
       float temp_ref = 40.0;
-      float vol_ref = 25.0;
+      float vol_ref_100_75 = (30.0/140.0)*100.0;
+      float vol_ref_75_50 = (40.0/140.0)*100.0;
+      float vol_ref_50_25 = (40.0/140.0)*100.0;
+      float vol_ref_25_0 = (30.0/140.0)*100.0;
       float temp_reseau = 15.0;
       float temp_reseau_ref = 15.0;
       float vol_total = 300;
@@ -345,10 +401,10 @@ sensor:
       float temp_25 = id(sensor_3).state;
       float temp_100 = id(sensor_4).state;
       float temp_0 = id(sensor_5).state;
-      float tangente_100_75 = (temp_75 - temp_100) / vol_ref;
-      float tangente_75_50 = (temp_50 - temp_75) / vol_ref;
-      float tangente_50_25 = (temp_25 - temp_50) / vol_ref;
-      float tangente_25_0 = (temp_0 - temp_25) / vol_ref;
+      float tangente_100_75 = (temp_75 - temp_100) / vol_ref_100_75;
+      float tangente_75_50 = (temp_50 - temp_75) / vol_ref_75_50;
+      float tangente_50_25 = (temp_25 - temp_50) / vol_ref_50_25;
+      float tangente_25_0 = (temp_0 - temp_25) / vol_ref_25_0;
       float temp_moy_100_75 = (temp_100 + temp_75) / 2.0;
       float temp_moy_75_50 = (temp_75 + temp_50) / 2.0;
       float temp_moy_50_25 = (temp_50 + temp_25) / 2.0;
@@ -367,7 +423,7 @@ sensor:
 
       if (temp_100 >= temp_ref) {
         if (temp_75 >= temp_ref) {
-          vol_expl_100_75 = vol_ref * (1 + (temp_moy_100_75 - temp_ref)/(temp_ref - temp_reseau));
+          vol_expl_100_75 = vol_ref_100_75 * (1 + (temp_moy_100_75 - temp_ref)/(temp_ref - temp_reseau));
         } else {
           vol_expl_100_75 = ((temp_ref-temp_100)/tangente_100_75) * (1 + (temp_moy_100_75 - temp_ref)/(temp_ref - temp_reseau));
           }
@@ -378,7 +434,7 @@ sensor:
       if (temp_100 >=temp_ref) {
         if (temp_75 >= temp_ref) {
           if (temp_50 >= temp_ref) {
-            vol_expl_75_50 = vol_ref * (1 + (temp_moy_75_50 - temp_ref)/(temp_ref - temp_reseau));
+            vol_expl_75_50 = vol_ref_75_50 * (1 + (temp_moy_75_50 - temp_ref)/(temp_ref - temp_reseau));
           } else {
             vol_expl_75_50 = ((temp_ref-temp_75)/tangente_75_50) * (1 + (temp_moy_75_50 - temp_ref)/(temp_ref - temp_reseau));
           }
@@ -392,7 +448,7 @@ sensor:
       if (temp_75 >= temp_ref and temp_100 >=temp_ref) {
         if (temp_50 >= temp_ref) {
           if (temp_25 >= temp_ref) {
-            vol_expl_50_25 = vol_ref * (1 + (temp_moy_50_25 - temp_ref)/(temp_ref - temp_reseau));
+            vol_expl_50_25 = vol_ref_50_25 * (1 + (temp_moy_50_25 - temp_ref)/(temp_ref - temp_reseau));
           } else {
             vol_expl_50_25 = ((temp_ref-temp_50)/tangente_50_25) * (1 + (temp_moy_50_25 - temp_ref)/(temp_ref - temp_reseau));
           }
@@ -407,7 +463,7 @@ sensor:
       if (temp_50 >= temp_ref and temp_75 >= temp_ref and temp_100 >=temp_ref) {
         if (temp_25 >= temp_ref) {
           if (temp_0 >= temp_ref) {
-            vol_expl_25_0 = vol_ref * (1 + (temp_moy_25_0 - temp_ref)/(temp_ref - temp_reseau));
+            vol_expl_25_0 = vol_ref_25_0 * (1 + (temp_moy_25_0 - temp_ref)/(temp_ref - temp_reseau));
           } else {
             vol_expl_25_0 = ((temp_ref-temp_25)/tangente_25_0) * (1 + (temp_moy_25_0 - temp_ref)/(temp_ref - temp_reseau));
           }
@@ -421,7 +477,11 @@ sensor:
       vol_expl = (vol_expl_100_75 + vol_expl_75_50 + vol_expl_50_25 + vol_expl_25_0)*vol_total/100.0;
       return vol_expl;
 
-
+  - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
+    name: "WiFi Signal dB"
+    id: wifi_signal_db_sonde_chauffe_eau
+    update_interval: 60s
+    entity_category: "diagnostic"
 
 text_sensor:
   - platform: wifi_info
@@ -433,8 +493,5 @@ text_sensor:
       name: "${device_name} Wifi SSID"
     bssid:
       name: "${device_name} Wifi BSSID"
-
-
-
 
 ```
