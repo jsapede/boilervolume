@@ -1,3 +1,5 @@
+Calcul de la capacité d'eau chaude restante dans un chauffe-eau à partir de sondes positionnées a différentes hauteur sur la paroi de la cuve.
+
 precision : 
 - extraction eau chaude par le haut
 - appoint eau froide par le bas
