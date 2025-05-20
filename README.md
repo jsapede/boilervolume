@@ -5,8 +5,8 @@ precision :
 - appoint eau froide par le bas
 - 5 sondes dallas a 0% 25%, 50% 75% et 100% de hauteur
 - stratification des températures + chauffage en partie basse du chauffe eau => en phase de chauffe si le bas se rechauffe plus vite que le haut il n'est pourtant pas exploitable => ajout de filtres sur les valeurs de temperatures aux niveaux superieurs pour éviter de comptabiliser ces volumes lors des phases de chauffe.
-- on calcule d'abord le volume d'eau utile c'edt à dire tout le volume dont la T° est >= 40°C
-- on calcule ensuite le volume exploitable, c'est à dire le volume équivalent dilué utilisable à 40°C (mitigeur), en considérant une dilution à l'eau du reseau
+- on calcule d'abord le volume d'eau utile c'est à dire tout le volume d'eau dont la T° est >= 40°C
+- on calcule ensuite le volume exploitable, c'est à dire le volume équivalent dilué utilisable à 40°C (mitigeur), en considérant une dilution à la température de l'eau du reseau. C'est le volume réel dont vous disposez à 40°C
 
 Stratégie de calcul :
 -  on commence par le point le plus haut et on descend : l'eau chaude est soutirée en hauteur et l'appoint froid se fait en bas
