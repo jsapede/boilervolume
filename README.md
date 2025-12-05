@@ -60,7 +60,7 @@ Set of parameters used for th ecalculation, adjust according to your system :
       float vol_total = 300; # total useful volume of the tank
 ```
 
-*ESPHome Code*
+## ESPHome Code
 
 NOTE : esp-idf framework is used here instead of arduino to eanble bluetooth proxy extendend capabilities and 801.11k / 802.11v wifi roaming capabilities. Works on arduino framework, adapt to your configuraition.
 
