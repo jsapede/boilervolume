@@ -4,7 +4,7 @@ Use ESPHOMe ans Dallas temperature sensors to compute hot water volume in belect
 
 ## Principles : 
 
-Volume calculation is made with Dallas sensors sticked on the inner smertallic surface fo the electrical boiler. 
+Volume calculation is made with Dallas sensors sticked on the inner metallic surface of the electrical boiler. 
 
 **Main assumptions are :**
 - boiler tank is a vertical cylinder
